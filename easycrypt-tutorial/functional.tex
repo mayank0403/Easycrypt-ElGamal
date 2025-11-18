@@ -1,0 +1,146 @@
+\EasyCrypt's expression language is a higher-order strongly typed
+functional language. Following a syntax close to that of ML languages
+such as \OCaml of \FSTAR, \EasyCrypt allows a user to define its own
+data types and operators as mathematical functions.
+
+\subsection{Types}
+\label{sec:basic-types}
+
+\EasyCrypt natively supports the following basic types:
+
+\begin{itemize}
+\item \ec{unit} - the (empty) \textit{void} type
+\item \ec{bool} - the boolean type
+\item \ec{int} - the set of integers
+\item \ec{real} - the set of real
+\end{itemize}
+
+New types can be defined according to the following syntax, where we
+specify a new type that captures tuples of integers and booleans.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+type int_bool_tuple = int * bool.  
+\end{lstlisting}
+
+Types can also be left under specified, i.e., without an actual
+realization of the type. For example, in the following \EasyCrypt
+code, a new type \ec{t} is defined, without provide a concrete value
+to it.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+type t. 
+\end{lstlisting}
+
+When a type is left under specified, it is common practice to call it
+an \textit{abstract type}.
+
+\subsection{Operators}
+\label{sec:operators}
+
+Operators in \EasyCrypt are defined using the \ec{op} keyword,
+followed by the operator name, arguments, return type and, finally,
+the operator body. The \ec{fst} and \ec{snd} operators - that extract
+the first and second elements of the \ec{int_bool_type} type,
+respectively - can be specified as follows.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+op fst (x : int_bool_tuple) : int = let (a, b) = x in a.
+op snd (x : int_bool_tuple) : bool = let (a, b) = x in b.  
+\end{lstlisting}
+
+Operators can also be defined for \EasyCrypt native types. For
+example, the script
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+op double (x : int) : int = x * 2.
+\end{lstlisting}
+
+\noindent specifies a function that doubles the value of a given
+integer.
+
+The operators described above can be combined with the goal
+of defining a function that, taking as input a tuple of integers and
+booleans (the \ec{int_bool_tuple} type), returns a new element of the
+\ec{int_bool_tuple} type, where the integer value has been doubled.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+op double_int (x : int_bool_tuple) : int_bool_tuple =
+  let k = fst x in
+  let b = snd b in
+  let dk = double k in
+  (dk, b).
+\end{lstlisting}
+
+Finally, operators can also be left abstract. For example, suppose one
+wants to formalize a finite field library in \EasyCrypt. First, one
+would need to specify an (abstract) type to capture elements of the finite
+field and then define a series of abstract operators that would
+specify arithmetic operations.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+op q : int. (* The order of field is a prime q *)
+
+type t. (* Type of elements of the field *)
+
+op fzero : t. (* Zero element *)
+op fone  : t. (* One element *)
+op ( * ) : t -> t -> t. (* Multiplication modulo q *)
+op ( + ) : t -> t -> t. (* Addition modulo q *)
+op [ - ] : t -> t. (* Additive inverse modulo q *)
+\end{lstlisting}
+
+In the above \EasyCrypt script also introduces the syntax to specify
+infix and prefix operators: operators defined between parentheses -
+like \ec{op ( * )} and \ec{op ( + )} - are infix operators whereas
+operators defined between brackets - like \ec{[ - ]} - are prefix
+operators. 
+
+\subsection{Data structures}
+\label{sec:data-structures}
+
+\EasyCrypt also supports inductive data structures, commonly found in
+many functional languages. Natively, it supports inductive lists that
+may be the empty list \ec{[]}, or a value \ec{x::xs} constructed
+inductively by prepending \ec{x} to the list {xs}.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+type 'a list = [
+  | "[]"
+  | (::) of 'a & 'a list
+].
+\end{lstlisting}
+
+Pattern-matching over an inductive data type is performed using the
+\ec{with} syntax, as follows.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+op size (l : 'a list) : int =
+  with l = []      => 0
+  with l = x :: xs => 1 + size xs.
+\end{lstlisting}
+
+% \EasyCrypt already discloses an extremely comprehensive list library,
+% that the student is encouraged to 
+
+Another example of an inductive data type that is widely used is that
+of binary trees, comprised of \textit{nodes} and \textit{leafs}. A
+\textit{node} carries a data item and has a left and right
+\textit{subtree}. A \textit{leaf} is empty. In \EasyCrypt, one can
+write the binary tree data type as follows.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+type 'a tree =
+  | Leaf
+  | Node of 'a & 'a tree & 'a tree.
+\end{lstlisting}
+
+The depth of a tree is given by the total number of edges from the
+root node to the target node. In \EasyCrypt, the depth of a tree can
+be calculated as showed next, where we assume the existence of the
+function \ec{max} that returns the maximum of two integers.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+op depth (t : 'a tree) : int =
+  with t = Leaf       => 0
+  with t = Node x l r => 1 + max (depth l) (depth r).
+\end{lstlisting}

@@ -1,0 +1,102 @@
+Probabilistic Hoare logic (pHL) allows one to write HL lemmas that are
+bounded by some probability. Intuitively, it allows the proof of
+statements where, given some precondition, the postcondition only
+occurs with a given probability $P$. A pHL triple can be written
+according to the following syntax
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma phoare_triple : phoare [p : pre ==> post ] < P
+\end{lstlisting}
+
+Dealing with probability distributions inside \EasyCrypt is, perhaps,
+the most complicated aspect of \EasyCrypt. \EasyCrypt provides a
+series of libraries to deal with probabilistic reasoning that we will
+not cover here. Instead, we will resort to the most relevant aspects
+of how probability distributions are formalized in \EasyCrypt.
+
+\subsection{\EasyCrypt probability distributions}
+\label{sec:probability-distributions}
+
+Probability distributions in \EasyCrypt are defined using the special
+\ec{distr} type. For example, a probability distribution over the
+integers can be defined as
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+op int_distr : int distr.
+\end{lstlisting}
+
+The \ec{support} of a distribution represents the elements that
+compose the domain of that distribution, i.e., those than can be
+sampled. For example, to restrict the domain of \ec{int_distr} to the
+values between 0 and 100, one can write
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+axiom int_distr_support : forall (x : int), 0 <= x <= 100 => x \in int_distr.
+axiom int_distr_supportN : forall (x : int), !(0 <= x <= 100) => x \notin int_distr.
+\end{lstlisting}
+
+The \ec{weight} of a distribution establishes the sum of the
+probabilities of all elements of the distribution domains. Informally,
+we say that if the weight of a distribution is 1, then it is defined
+for all elements of the domain. In \EasyCrypt, this is captured by the
+\ec{is_lossless} predicate.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+axiom int_distr_lossless : is_lossless int_distr.
+\end{lstlisting}
+
+Finally, it is possible to specify the probability of sampling a value
+in a probability distribution. In order to do so, \EasyCrypt includes
+a special operator \ec{mu}, that defines the probability of some event
+occurs in a distribution. Therefore, to define the sampling
+probability of an element, one can follow the next \EasyCrypt script.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+axiom int_distr_mu1 : forall (x : int), 0 <= x <= 100 => mu int_distr (fun k => k = x) = (1%r / 101%r).
+\end{lstlisting}
+
+\subsection{\EasyCrypt pHL example}
+\label{sec:phl-example}
+
+Consider the following \EasyCrypt module, that uses the previously
+formalized \ec{int_distr} probability distribution.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+module Example = {
+  
+  proc main() : int = {
+    var x;
+
+    x <$\$$ int_distr;
+
+    return (x * 2);
+  }
+}.
+\end{lstlisting}
+
+\noindent where we define a module \ec{Example} that samples a value
+from \ec{int_distr} and then doubles it. In this example, we will
+prove that the probability of this program outputting 100 is
+$\frac{1}{101}$, i.e., the probability of sampling 50.
+
+The \EasyCrypt pHL statement is written and proved bellow.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma example : phoare [Example.main : true ==> res = 10] <= (1%r / 101%r).
+proof.
+  proc.
+  rnd.
+  skip.
+  progress.
+  have : mu int_distr (fun (x : int) => x * 2 = 10) = 
+         mu int_distr (fun (x : int) => x = 5).
+    congr.
+    rewrite fun_ext /(==).
+    move => x.
+    smt.
+  move => H.
+  rewrite H int_distr_mu1. 
+  trivial. 
+  trivial. 
+qed.
+\end{lstlisting}

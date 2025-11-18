@@ -1,0 +1,421 @@
+\documentclass{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{mathtools}
+\usepackage{amsfonts}
+\usepackage[all]{xy}
+\usepackage{xspace}
+\usepackage{listings,multicol,multirow}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{enumitem}
+\usepackage{pifont}
+\usepackage{chngpage}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+
+% Task, TODO and comment env
+\newcommand{\comment}[1]{ {\color{blue} $\Rightarrow_{comment}$ #1} }
+\newcommand{\taskinl}[1]{ {\color{red} $\bullet$ \textbf{TODO} #1} }
+\newcommand{\task}{\item}
+\newenvironment{TODO}{%
+    \begin{center}
+    \color{red}\textbf{Unfinished tasks:}
+        \begin{enumerate}
+}{%
+        \end{enumerate}
+    \end{center}
+  }
+
+\definecolor{OliveGreen}{rgb}{0,0.6,0}
+\definecolor{Blue}{rgb}{0.0, 0.0, 0.6}
+\definecolor{Red}{rgb}{0.6, 0.0, 0.0}
+
+\newcommand{\EasyCrypt}{\textsf{EasyCrypt}\xspace}
+\newcommand{\OCaml}{\textsf{OCaml}\xspace}
+\newcommand{\FSTAR}{\textsf{F$\star$}\xspace}
+
+\newcommand{\INDCPA}{\texttt{IND-CPA}\xspace}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+
+\include{easycrypt.tex}
+
+\title{\EasyCrypt\ - Hashed ElGamal semantic security proof exercise}
+\date{FMiTF Bootcamp - May 29 - June 2, 2023}
+\author{Vitor Pereira}
+
+\begin{document}
+\maketitle
+%\tableofcontents
+
+\section{Introduction}
+\label{sec:introduction}
+
+The purpose of this document is to describe a verification exercise
+that consists on performing the security proof of the ElGamal
+encryption scheme in its hashed version. We will first give an
+overview of how such proofs are done in \EasyCrypt using the
+non-hashed ElGamal cryptosystem as an example.
+
+We will closely follow the proof provided at
+\cite{cryptoeprint:2004/332}, where the game hopping proof technique
+is also explained. The student is encouraged to closely follow
+\cite{cryptoeprint:2004/332} while reading this document in order to
+match the building blocks described here with the proof described in
+\cite{cryptoeprint:2004/332}.
+
+\section{Modeling public key encryption Schemes in \EasyCrypt}
+\label{sec:enc-schemes-model}
+
+A public key encryption scheme is a 3-tuple of algorithms:
+
+\begin{itemize}
+\item \textsf{KenGen() : pk * sk} - a probabilistic algorithm that
+  generates both the public and secret keys (\textsf{pk} and
+  \textsf{sk}, respectively).
+\item \textsf{Encrypt(pk, pt) : ct} - a probabilistic algorithm that
+  takes as input the public key \textsf{pk} and the plaintext
+  \textsf{pt} and outputs a ciphertext \textsf{ct}.
+\item \textsf{Decrypt(sk, ct) : pt} - a deterministic algorithm that
+  takes as input the secret key \textsf{sk} and the ciphertext
+  \textsf{ct} and outputs a plaintext \textsf{pt}.  
+\end{itemize}
+
+In \EasyCrypt, the modeling of public key encryption schemes can be
+captured by a \ec{module type}, as follows
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+type pk_t.
+type sk_t.
+type pt_t.
+type ct_t.
+
+module type Scheme = {
+  proc key_gen() : pk_t * sk_t
+  proc encrypt(pk : pk_t, m : pt_t) : ct_t
+  proc decrypt(sk : sk_t, ct : ct_t) : pt_t
+}.
+\end{lstlisting}
+
+\section{Modeling security definitions in \EasyCrypt}
+\label{sec:sec-defs-model}
+
+Cryptographic semantic security, also dubbed as \textit{indistinguishability
+against chosen-plaintext attacks} or simply \textit{IND-CPA}, is a
+security definition that is captured by the following security
+experience (or \textit{game}):
+
+\begin{enumerate}
+\item First, an \textit{adversary} (an entity trying to break the
+  \textit{IND-CPA} security), chooses two messages, say $m_0$ and $m_1$.
+\item Next, the \textit{challenger} selects a random bit $b$ and encrypts
+  message $m_0$ if $b = false$ or encrypts $m_1$ if $b = 1$.
+\item The \textit{adversary} is then given the encryption of either
+  $m_0$ or $m_1$
+\item Finally, the \textit{adversary} must output a \textit{decision}
+  bit $b'$: it needs to determine if the ciphertext it got from the
+  \textit{challenger} corresponds to an encryption of $m_0$ or $m_1$.
+\end{enumerate}
+
+If the scheme is \textit{IND-CPA} secure, then the \textit{adversary}
+is said to have no \textit{advantage} against the scheme and its best
+option is to \textit{guess} which message originated the ciphertext it
+received. Formally, a scheme is \textit{IND-CPA} secure if the
+probability that the \textit{adversary} outputs $b' = b$ is
+$\frac{1}{2}$.
+
+In \EasyCrypt, the \textit{IND-CPA} security game can be defined as a
+module as follows
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+module type INDCPA_Adv = {
+  proc gen_query(pk : pk_t) : pt_t * pt_t
+  proc guess(ct : ct_t) : bool
+}.
+
+module INDCPA (S : Scheme) (A : INDCPA_Adv) = {
+  proc main() : bool = {
+    var pk, sk, m0, m1, b, b', ct;
+
+    (pk, sk) <@ S.key_gen();
+    (m0, m1) <@ A.gen_query(pk);
+    b <$\$$ {0,1};
+    ct <@ S.encrypt(pk, if b then m1 else m0);
+    b' <@ A.guess(ct);
+
+    return (b = b');
+  }
+}.
+\end{lstlisting}
+
+\section{\EasyCrypt ElGamal specification}
+\label{sec:elgamal-spec}
+
+We first provide a brief description of the ElGamal cryptosystem. Let
+$G$ be a group of prime order $q$, and let $g \in G$ be a
+generator. The key generation algorithm computes $(pk,sk)$ as follows
+
+$$ x \xleftarrow{\$} \mathbb{Z}_q ; pk \gets g^x ; sk \gets x $$
+
+\noindent To encrypt a message $m \in G$, the encryption algorithm
+proceeds as follows
+
+$$ y \xleftarrow{\$} \mathbb{Z}_q ; \beta \gets g^y ; \delta \gets pk^y ; \zeta \gets
+\delta \cdot m ; ct \gets (\delta, \zeta)$$
+
+Finally, decryption of a ciphertext is simply done by
+
+$$ m <- \zeta / \beta^{sk} $$
+
+% \subsection{Finite field \EasyCrypt library}
+
+
+
+% \subsection{Cyclic group \EasyCrypt library}
+
+% \subsection{\EasyCrypt ElGamal definition}
+
+The ElGamal encryption scheme can be defined in \EasyCrypt as a module
+of type \ec{Scheme} in accordance to the following code.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+module ElGamal : Scheme = {
+  proc key_gen() : pk_t * sk_t = {
+    var pk, sk;
+
+    sk <$\$$ FDistr.dt;
+    pk <- g ^ sk;
+
+    return (pk, sk);
+  }
+
+  proc encrypt(pk : pk_t, m : pt_t) : ct_t = {
+    var y, bet, delt, zet;
+
+    y <$\$$ FDistr.dt;
+    bet <- g ^ y;
+    delt <- pk ^ y;
+    zet <- delt * m;
+
+    return (bet, zet);
+  }
+
+  proc decrypt(sk : sk_t, ct : ct_t) : pt_t = {
+    var m, bet, zet;
+
+    (bet, zet) <- ct;
+    m <- zet / (bet ^ sk);
+
+    return (m);
+  }
+}.
+\end{lstlisting}
+
+\noindent where \ec{FDistr.dt} is a uniform probability distribution
+over elements of the finite field $\mathbb{Z}_q$.
+
+Finite field and cyclic group arithmetic libraries are provided in the
+\EasyCrypt scripts that accompany this document.
+
+\section{ElGamal semantic security proof}
+\label{sec:elgamal-proof}
+
+ElGamal encryption is semantically secure under the Decisional
+Diffie-Hellman (DDH) assumption. This is the assumption that it is
+hard to distinguish triples of the form $(g^x, g^y, g^{x*y})$ from triples of
+the form $(g^x, g^y, g^{z})$, where $x$, $y$, and $z$ are random
+elements of $\mathbb{Z}_q$.
+
+\subsection{DDH assumption in \EasyCrypt}
+
+The DDH assumption is formulated in \EasyCrypt as follows
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+module type Adversary = {
+  proc guess(gx gy gz : group) : bool
+}.
+
+module DDH0 (A : Adversary) = {
+  proc main() : bool = {
+    var b, x, y;
+
+    x <$\$$ FDistr.dt;
+    y <$\$$ FDistr.dt;
+    b <@ A.guess(g ^ x, g ^ y, g ^ (x * y));
+    return b;
+  }
+}.
+
+module DDH1 (A : Adversary) = {
+  proc main() : bool = {
+    var b, x, y, z;
+
+    x <$\$$ FDistr.dt;
+    y <$\$$ FDistr.dt;
+    z <$\$$ FDistr.dt;
+    b <@ A.guess(g ^ x, g ^ y, g ^ z);
+    return b;
+  }
+}.
+\end{lstlisting}
+
+\noindent where the \textit{advantage} against the DDH is formulated
+as
+
+$$ | Pr [DDH0(A).main : b = 1 ] - Pr [DDH1(A).main : b = 1 ] | $$
+
+\subsection{DDH reduction proof}
+
+Cryptographic reduction proof are done following a
+\textit{contradiction} approach. For example, to reduce the security
+of the ElGamal encryption scheme to the DDH assumption, one needs to
+prove that any procedure that can be used to break the security of the
+scheme can also be used to break the DDH assumption. However, DDH is
+considered a hard mathematical problem and, therefore, no algorithm
+can be used to solve it in computational time, meaning that we arrived 
+at a contradiction. Consequently, there is no \textit{adversary} is
+able to successfully break the security of ElGamal, since that would
+mean that the DDH assumption would not be hard problem, as it is
+assumed.
+
+To perform the reduction proof in \EasyCrypt, one needs to write a DDH
+\textit{adversary} that uses the \textit{IND-CPA} adversary as a
+sub-routine. That adversary is written bellow.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+module D (A : INDCPA_Adv) = {
+  proc guess(gx gy gz : group) : bool = {
+    var m0, m1, b, b';
+
+    (m0, m1) <@ A.gen_query(gx);
+    b <$\$$ {0,1};
+    b' <@ A.guess(gy, gz * (if b then m1 else m0));
+
+    return (b = b');
+  }
+}.
+\end{lstlisting}
+
+\noindent The \ec{D} \textit{adversary} first queries \ec{A} (the
+\textit{IND-CPA} \textit{adversary}) to generate two messages and then
+uses \ec{A} \ec{guess} procedure (the procedure used by \ec{A} to
+break ElGamal's security) to procedure its own decision bit.
+
+Next, we define a new \textit{game} that is equivalent to the original
+\textit{IND-CPA} experience, except that the value $\zeta$ is
+calculated as $\zeta \gets g^z$, with random $z \in \mathbb{Z}_q$,
+instead of $\zeta \gets \delta \cdot m$.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+module Game1 = {
+  proc main() : bool = {
+    var pk, sk, m0, m1, b, b', ct, y, bet, delt, z, zet;
+
+    (pk, sk) <@ ElGamal.key_gen();
+    (m0, m1) <@ A.gen_query(pk);
+    b <$\$$ {0,1};
+
+    y <$\$$ FDistr.dt;
+    bet <- g ^ y;
+    delt <- pk ^ y;
+    z <$\$$ FDistr.dt;
+    zet <- g ^ z;
+    ct <- (bet, zet);
+
+    b' <@ A.guess(ct);
+
+    return (b = b');
+  }
+}.
+\end{lstlisting}
+
+Now, we are able to prove that the \ec{D} \textit{adversary}
+interpolates both the \textit{IND-CPA} \textit{game} (which is
+typically called \textit{Game0}) and \ec{Game1}. That is done by
+proving the following two equivalence lemmas
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma game0_ddh0_equiv : equiv [ DDH0(D(A)).main ~ Game0(A).main : ={glob A} ==> ={res} ].
+
+lemma game1_ddh1_equiv : equiv [ DDH1(D(A)).main ~ Game1.main : ={glob A} ==> ={res} ].
+\end{lstlisting}
+
+\noindent and, since both games are equivalent, they output the same
+bit with equivalent probability
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma game0_ddh0_pr &m : Pr [ DDH0(D(A)).main() @ &m : res ] = Pr [ Game0(A).main() @ &m : res ].
+      
+lemma game1_ddh1_pr &m : Pr [ DDH1(D(A)).main() @ &m : res ] = Pr [ Game1.main() @ &m : res ].
+\end{lstlisting}
+
+The complete proof of these lemmas can be found in the accompanying
+\EasyCrypt files.
+
+Note that the output of \ec{Game1} (\ec{b = b'}) is
+independent of the bit \ec{b}, since no message is actually
+encrypted. Therefore, one can prove that the probability of the event
+\ec{b = b'} is precisely $\frac{1}{2}$.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma game1_pr &m : Pr [ Game1.main() @ &m : res ] = 1%r / 2%r.
+\end{lstlisting}
+
+Finally, we can establish the concrete security bounds of the ElGamal
+encryption scheme by proving the following lemma
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma security &m :
+  Pr [ INDCPA(ElGamal, A).main() @ &m : res ] = 
+    1%r/2%r + (Pr[ DDH0(D(A)).main() @ &m : res ] - Pr[ DDH1(D(A)).main() @ &m : res ]).
+\end{lstlisting}
+
+\noindent where \ec{Pr[ DDH0(D(A)).main() @ &m : res ] - Pr[
+  DDH1(D(A)).main() @ &m : res ]} represents the (negligible)
+advantage against the DDH assumption.
+
+\section{Exercise: semantic security proof of hashed ElGamal}
+\label{sec:exercise}
+
+Your goal is to take advantage of the description of the semantic
+security proof of ElGamal described above and detailed in the
+\EasyCrypt files that are attached to this document, and perform the
+semantic security of the ElGamal encryption scheme in its hashed
+version.
+
+Briefly, the security of hashed ElGamal can be reduced to the DDH
+assumption and to the \textit{entropy smoothing} assumption of the
+underlying hash function. The first reduction step is the same of the
+non-hashed ElGamal version. You will need to do the second reduction
+proof, i.e., the reduction to the \textit{entropy smoothing} hash
+function assumption. You will not need to formalize this assumption,
+as it is part of the \EasyCrypt set of files available to
+you. Similarly to the DDH reduction proof, you will need to write an
+\textit{entropy smoothing} adversary based on an \textit{IND-CPA}
+adversary and write a new game hop that interpolates with the this new
+assumption.
+
+The complete security proof of the hashed ElGamal cryptosystem can
+also be found at \cite{cryptoeprint:2004/332}.
+
+\bibliographystyle{plain}
+\bibliography{refs.bib}
+
+\end{document}

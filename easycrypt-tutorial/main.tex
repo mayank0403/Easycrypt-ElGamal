@@ -1,0 +1,105 @@
+\documentclass{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{mathtools}
+\usepackage{amsfonts}
+\usepackage[all]{xy}
+\usepackage{xspace}
+\usepackage{listings,multicol,multirow}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{enumitem}
+\usepackage{pifont}
+\usepackage{chngpage}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+
+% Task, TODO and comment env
+\newcommand{\comment}[1]{ {\color{blue} $\Rightarrow_{comment}$ #1} }
+\newcommand{\taskinl}[1]{ {\color{red} $\bullet$ \textbf{TODO} #1} }
+\newcommand{\task}{\item}
+\newenvironment{TODO}{%
+    \begin{center}
+    \color{red}\textbf{Unfinished tasks:}
+        \begin{enumerate}
+}{%
+        \end{enumerate}
+    \end{center}
+  }
+
+\definecolor{OliveGreen}{rgb}{0,0.6,0}
+\definecolor{Blue}{rgb}{0.0, 0.0, 0.6}
+\definecolor{Red}{rgb}{0.6, 0.0, 0.0}
+
+\newcommand{\EasyCrypt}{\textsf{EasyCrypt}\xspace}
+\newcommand{\OCaml}{\textsf{OCaml}\xspace}
+\newcommand{\FSTAR}{\textsf{F$\star$}\xspace}
+
+\newcommand{\INDCPA}{\texttt{IND-CPA}\xspace}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+
+\include{easycrypt.tex}
+
+\title{\EasyCrypt\ - a (brief) tutorial}
+\date{FMiTF Bootcamp - May 29 - June 2, 2023}
+\author{Vitor Pereira}
+
+\begin{document}
+\maketitle
+%\tableofcontents
+
+\section{Introduction}
+\label{sec:introduction}
+
+This document serves as support to the \textit{\EasyCrypt - Hashed
+  ElGamal semantic security proof exercise}, containing a brief
+\EasyCrypt tutorial, describing the most used proof tactics and also
+providing an explanation of the \EasyCrypt specification language.
+
+The student is encouraged to follow the default \EasyCrypt manual 
+available at \url{https://github.com/EasyCrypt/easycrypt-doc} for a
+more complete description on the tool.
+
+\section{Fuctional types, operators and data structures}
+\label{sec:func-types-and-ops}
+\input{functional.tex}
+
+\section{Ambient logic}
+\label{sec:ambient-logic}
+\input{ambient.tex}
+
+\section{Modules}
+\label{sec:modules}
+\input{modules.tex}
+
+\section{Hoare logic}
+\label{sec:hoare-logic}
+\input{hoare.tex}
+
+\section{Probabilistic Hoare logic}
+\label{sec:phoare-logic}
+\input{phl.tex}
+
+\section{Probabilistic Relational Hoare logic}
+\label{sec:prhl}
+\input{prhl.tex}
+
+\end{document}
+

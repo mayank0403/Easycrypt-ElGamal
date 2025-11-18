@@ -1,0 +1,145 @@
+Probabilistic Relational Hoare logic (pRHL) allows one to write HL
+lemmas that compare the execution of two programs. Intuitively, it
+allows the proof of statements where two programs are compared and
+where users can write pre and postconditions that refer to variables
+on both programs. Concretely, variables on the \textit{left} program
+can be referred to using the \ec{{1}} tag, whereas variables on the
+\textit{right} program can be referred to using the \ec{{2}} tag. A
+pRHL triple can be written according to the following syntax.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma p_relational_hoare_logic : equiv [p1 ~ p2 : pre ==> post]. 
+\end{lstlisting}
+
+The same tactics that were analyzed in Section~\ref{sec:hoare-logic}
+can be applied to pRHL judgments but, instead of consuming statements
+in a singe program, it will consume statements on both programs being
+analyzed.
+
+\subsection{Relational \ec{rnd} tactic}
+
+The \ec{rnd} tactic, when applied in a pRHL context, it follows a
+different behavior when comparing to HL. Concretely
+
+\paragraph{\ec{rnd | rnd f | rnd f g}}
+
+If the conclusion is a pRHL judgement whose programs end with random
+assignments \ec{x1 <}$\$$ {d1} and {x2 <}$\$$ {d2}, and {f} and {g}
+are functions between the types of {x1} and {x2}, then consume those
+random assignments, replacing the conclusion’s postcondition by the
+probabilistic weakest precondition of the random assignments wrt. {f}
+and {g}. The new postcondition checks that:
+
+\begin{itemize}
+\item \ec{f} and \ec{g} are an isomorphism between the distributions
+  d1 and d2
+\item for all elements \ec{u} in the support of \ec{d1}, the result of
+  substituting \ec{u} and \ec{f} u for \ec{x1{1}} and \ec{x2{2}} in
+  the conclusion’s original postcondition holds
+\end{itemize}
+
+Example: applying \ec{rnd (fun b => if b then 3 else 2) (fun m => m =
+  3)} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+n: int
+------------------------------------------------------------------------
+&1 (left ) : M.h
+&2 (right) : N.h
+
+pre = y{2} = n
+
+x <$\$$ {0,1}              (1)  y <- y - 1            
+                           (2)  x <$\$$ [2..3]
+
+post = x{1} <=> x{2} + y{2} = n + 2
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+n: int
+------------------------------------------------------------------------
+&1 (left ) : M.h
+&2 (right) : N.h
+
+pre = y{2} = n
+
+x <$\$$ {0,1}              (1)  y <- y - 1            
+                           (2)  x <$\$$ [2..3]
+
+post =
+  (forall (xR : int),
+    xR \in [2..3] => xR = if xR = 3 then 3 else 2) &&
+  (forall (xR : int),
+    xR \in [2..3] => mu1 [2..3] xR = mu1 {0,1} (xR = 3)) &&
+  forall (xL : bool),
+    xL \in {0,1} =>
+    ((if xL then 3 else 2) \in [2..3]) &&
+    xL = ((if xL then 3 else 2) = 3) &&
+    (xL <=> (if xL then 3 else 2) + y{2} = n + 2)  
+\end{lstlisting}
+
+\subsection{\EasyCrypt pRHL example}
+\label{sec:prhl-example}
+
+Consider the following two \EasyCrypt modules
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+module type M = {
+  proc gen() : int
+}.
+
+module Example1 (M : M) = {
+  
+  proc main(x : int) : int = {
+    var r;
+
+    z <@ M.gen()             
+    r <$\$$ [0..100]            
+    if (x < 100) {           
+      y <- x * 2             
+    } else {                 
+      y <- r + z             
+    } 
+
+    return y;
+  }
+}.
+
+module Example2 (M : M) = {
+  
+  proc main(x : int) : int = {
+    var r;
+
+    z <@ M.gen()             
+    r <$\$$ [0..100]            
+    if (x < 50) {           
+      y <- x * 2             
+    } else {                 
+      y <- r + z             
+    } 
+
+    return y;
+  }
+}.
+\end{lstlisting}
+
+Using pRHL, it is possible to prove that, when the input of both
+programs is lower than 50, they will produce the same output.
+
+The \EasyCrypt pRHL statement is written and proved bellow.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma example (M <: M) : equiv [Example1(M).main ~ Example2(M).main : (glob M){1} = (glob M){2} /\ x{1} = x{2} /\ x{1} < 50 ==> res{1} = res{2}]. 
+proof.
+  proc.
+  wp.
+  rnd.
+  call (_ : true).
+  skip.
+  progress.
+  smt().
+  smt().
+qed.
+\end{lstlisting}

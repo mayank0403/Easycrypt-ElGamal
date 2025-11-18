@@ -1,0 +1,457 @@
+\paragraph{\ec{move =>} $\phi_1 \ldots \phi_n$}
+
+Moves assumptions from the conclusion into the context.
+
+Example: applying \ec{move => x y H} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+------------------------------------------------------------------------
+forall (x y : int), x = y => y = x
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+x: int
+y: int
+H: x = y
+------------------------------------------------------------------------
+y = x
+\end{lstlisting}
+
+\paragraph{\ec{move :} $\phi_1 \ldots \phi_n$}
+
+Moves assumptions from the context into the conclusion.
+
+Example: applying \ec{move : x y H} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+x: int
+y: int
+H: x = y
+------------------------------------------------------------------------
+y = x
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+------------------------------------------------------------------------
+forall (x y : int), x = y => y = x
+\end{lstlisting}
+
+\paragraph{\ec{split}}
+
+Break a goal whose conclusion is intrinsically conjunctive into goals
+whose conclusions are its conjunction.
+
+Example: applying \ec{split} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+P: bool
+Q: bool
+Hp: P
+Hq: Q
+------------------------------------------------------------------------
+P /\ Q
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+P: bool
+Q: bool
+Hp: P
+Hq: Q
+------------------------------------------------------------------------
+P
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+P: bool
+Q: bool
+Hp: P
+Hq: Q
+------------------------------------------------------------------------
+Q
+\end{lstlisting}
+
+\paragraph{\ec{right}}
+
+Reduce a goal whose conclusion is a disjunction to one whose
+conclusion is its right member.
+
+Example: applying \ec{split} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+P: bool
+Q: bool
+Hp: P
+Hq: Q
+------------------------------------------------------------------------
+P \/ Q
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+P: bool
+Q: bool
+Hp: P
+Hq: Q
+------------------------------------------------------------------------
+Q
+\end{lstlisting}
+
+\paragraph{\ec{left}}
+
+Reduce a goal whose conclusion is a disjunction to one whose
+conclusion is its left member.
+
+Example: applying \ec{split} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+P: bool
+Q: bool
+Hp: P
+Hq: Q
+------------------------------------------------------------------------
+P \/ Q
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+P: bool
+Q: bool
+Hp: P
+Hq: Q
+------------------------------------------------------------------------
+P
+\end{lstlisting}
+
+\paragraph{\ec{congr}}
+
+Replace a goal whose conclusion has the form $f p_1 \ldots p_n =
+f q_1 \ldots q_n$, where \ec{f} is an assumption identifier or
+operator, with subgoals having conclusions $p_1 = q_1, \ldots, p_n =
+q_n$.
+
+Example: applying \ec{congr} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+x: int
+y: int
+a: int
+b: int
+------------------------------------------------------------------------
+f x y = f a b
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+x: int
+y: int
+a: int
+b: int
+------------------------------------------------------------------------
+x = a
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+x: int
+y: int
+a: int
+b: int
+------------------------------------------------------------------------
+y = b
+\end{lstlisting}
+
+\paragraph{\ec{trivial}}
+
+Try to solve the goal by using a mixture of low-level tactics.
+
+Example: applying \ec{trivial} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+------------------------------------------------------------------------
+forall (x y : int), x = y => y - 1 = x - 1
+\end{lstlisting}
+
+\noindent solves the goal.
+
+\paragraph{\ec{progress}}
+
+Break the goal into multiple simpler ones by repeatedly applying
+\ec{move =>}, \ec{split} and \ec{subst}.
+
+Example: applying \ec{progress} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+------------------------------------------------------------------------
+forall (x : 'a) (l : 'a list), x \in l => 1 <= size l
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: 'a
+l: 'a list
+H: x \in l
+------------------------------------------------------------------------
+1 <= size l
+\end{lstlisting}
+
+\paragraph{\ec{have :} $\phi$}
+
+Logical cut. Generate two subgoals: one whose conclusion is the cut
+formula $\phi$, and one with conclusion $\phi => \psi$, where $\psi$
+is the current goal’s conclusion.
+
+Example: applying \ec{have : x \/ (x => false)} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: bool
+notnot_x: (x => false) => false
+------------------------------------------------------------------------
+x
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: bool
+notnot_x: (x => false) => false
+------------------------------------------------------------------------
+x \/ (x => false)
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: bool
+notnot_x: (x => false) => false
+------------------------------------------------------------------------
+x \/ (x => false) => x
+\end{lstlisting}
+
+\paragraph{\ec{apply} $\phi$}
+
+Tries to match the conclusion of the proof term $\phi$ with the goal’s
+conclusion.
+
+Example: applying \ec{apply H} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: int
+H: P x  
+------------------------------------------------------------------------
+P x
+\end{lstlisting}
+
+\noindent solves the goal.
+
+\paragraph{\ec{rewrite} $\phi_1 \ldots \phi_n$}
+
+Rewrite the rewrite-pattern $\phi_1 \ldots \phi_n$ from left to right.
+
+Example: applying \ec{rewrite eq_xy} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: int
+y: int  
+eq_xy: x = y
+z: int
+eq_yz: y = z
+------------------------------------------------------------------------
+x = z
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: int
+y: int  
+eq_xy: x = y
+z: int
+eq_yz: y = z
+------------------------------------------------------------------------
+y = z
+\end{lstlisting}
+
+\paragraph{\ec{subst} $\phi$}
+
+Search for the first equation of the form $x = t$ or $t = x$ in the
+context and replace all the occurrences of x by t everywhere in the
+context and the conclusion before clearing it.
+
+Example: applying \ec{subst x} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: bool
+y: bool
+z: bool
+w: bool
+eq_yx: y = x
+eq_yz: y = z
+eq_zw: z = w
+------------------------------------------------------------------------
+x = w
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: bool
+y: bool
+z: bool
+w: bool
+eq_yz: y = z
+eq_zw: z = w
+------------------------------------------------------------------------
+y = w
+\end{lstlisting}
+
+\paragraph{\ec{case} $\phi$}
+
+Assuming the goal’s conclusion is not a statement judgement, do an
+excluded-middle case analysis on $\phi$, substituting $\phi$ in the goal’s
+conclusion.
+
+Example: applying \ec{case (x <= y)} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: int
+y: int
+------------------------------------------------------------------------
+0 <= y - x
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: int
+y: int  
+------------------------------------------------------------------------
+x <= y
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: int
+y: int
+------------------------------------------------------------------------
+x <= y => 0 <= y - x
+\end{lstlisting}
+
+\paragraph{\ec{elim} $\phi$}
+
+Eliminates the top assumption of the goal’s conclusion, generating
+subgoals that are dependent upon the kind of assumption eliminated.
+
+Example: applying \ec{elim l} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+l: 'a list
+------------------------------------------------------------------------
+0 <= size l
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+------------------------------------------------------------------------
+0 <= size []
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+------------------------------------------------------------------------
+forall (x : 'a) (l : 'a list), 0 <= size l => 0 <= size (x :: l)
+\end{lstlisting}
+
+\paragraph{\ec{simplify}}
+
+Attempts to simplify the proof goal by solving trivial equalities or
+even by expanding operators being used.
+
+Example: applying \ec{simplify} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: 'a
+l: 'a list
+H: 0 <= size l
+------------------------------------------------------------------------
+0 <= size (x :: l)
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: 'a
+l: 'a list
+H: 0 <= size l
+------------------------------------------------------------------------
+0 <= 1 + size l
+\end{lstlisting}
+
+\paragraph{\ec{assumption}}
+
+Search in the context for a hypothesis that is convertible to the
+goal’s conclusion, solving the goal if one is found. Fail if none can
+be found.
+
+Example: applying \ec{assumption} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: bool
+H: P x  
+------------------------------------------------------------------------
+P x
+\end{lstlisting}
+
+\noindent solves the goal.
+
+\paragraph{\ec{reflexivity}}
+
+Solve goals with conclusions of the form $x = x$ (up to computation).
+
+Example: applying \ec{reflexivity} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: bool
+------------------------------------------------------------------------
+x = x
+\end{lstlisting}
+
+\noindent solves the goal.
+
+\paragraph{\ec{done}}
+
+Apply \ec{trivial} and fail if the goal is not closed.
+
+\paragraph{\ec{smt}}
+
+Try to solve the goal using SMT solvers. The goal is sent along with
+the local hypotheses plus selected axioms and lemmas.
+
+Example: applying \ec{smt} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+x: int
+y: int
+z: int
+H: x = y
+H0: y = z
+------------------------------------------------------------------------
+x = z
+\end{lstlisting}
+
+\noindent solves the goal.

@@ -1,0 +1,95 @@
+\EasyCrypt's is \EasyCrypt's foundational proof engine. It allows
+users to write axioms or prove lemmas about existing or newly defined
+types and operators. These can be either universally or existentially
+quantified.
+
+Before providing examples of \EasyCrypt axioms and lemmas, we first
+revise some useful proof tactics.
+
+\subsection{Commonly used \EasyCrypt tactics}
+\label{sec:ambient-logic-tactics}
+\input{ambient-tactics.tex}
+
+\subsection{Axioms}
+\label{sec:axioms}
+
+\EasyCrypt's allows users to axiomatize properties regarding types and
+operators. For example, using the (small) finite field library defined
+in Section~\ref{sec:operators}, it is possible to formalize the
+expected properties of the field operators, like the commutativity or
+associative properties, using axioms as follows.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+axiom addC (x y : t): x + y = y + x. (* Commutative addition property *)
+axiom addA (x y z : t) : x + (y + z) = (x + y) + z. (* Associative addition property *)
+
+axiom mulC (x y : t) : x * y = y * x. (* Commutative addition property *)
+axiom mulA (x y z : t): x * (y * z) = (x * y) * z. (* Associative multiplication property *)
+axiom mulfDl (x y z : t): (x + y) * (x + z) = x * (y + z). (* Distributive multiplication property over the addition *)
+\end{lstlisting}
+
+\subsection{Lemmas}
+\label{sec:lemmas}
+
+Lemmas are properties that, unlike axioms, are not assumed to be true
+and that require the user to write a complete proof for it. We provide
+two examples of \EasyCrypt lemmas, together with their respective
+proof script:
+
+\begin{enumerate}
+\item one that proves that adding a field element to another element that is different than
+  zero will output a different field element; and
+\item one that proves that the size of any list is always greater
+  than or equal to zero.
+\end{enumerate}
+
+\subsubsection{Adding a field element to another field element
+  different than zero}
+
+To prove the desired property, one can write the following two
+lemmas. It is recommended to follow this example using the \EasyCrypt
+framework in order to get a clear picture of how the proof evolves.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+lemma add_fzero_imp (x : t) (y : t) : x + y = x => y = fzero.
+proof.
+  move => H. 
+  have : y = x + (- x) by smt.
+  move => H0.
+  rewrite H0. 
+  apply addfN. 
+qed.
+  
+lemma non_zero_add (x : t) (y : t) :
+  y <> fzero => x + y <> x.
+proof.
+  move => H.
+  case (x + y = x).
+    move => H2.
+    have : y = fzero.
+      rewrite (add_fzero_imp x y).
+        assumption.
+      reflexivity.
+    trivial.
+  trivial.
+qed.
+\end{lstlisting}
+
+\subsubsection{Size of any list is always greater than or equal to
+  zero}
+
+To prove the desired property, one can write the following lemma. It
+is recommended to follow this example using the \EasyCrypt
+framework in order to get a clear picture of how the proof evolves.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+lemma size_ge0 (l : 'a list) : 0 <= size l.
+proof.
+  elim l.
+    simplify.
+    trivial.
+  move => x l Hind.
+  simplify.
+  smt.
+qed.
+\end{lstlisting}

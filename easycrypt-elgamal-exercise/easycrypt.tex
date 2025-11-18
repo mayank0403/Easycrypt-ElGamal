@@ -1,0 +1,102 @@
+% !TEX root = ./main.tex
+
+%\newcommand{\result}{\mathsf{res}}
+%\newcommand{\arrayVar}[2][]{{\mathbf{#2}_{#1}}}
+
+\lstdefinelanguage{easycrypt}{
+  style=easycrypt-default,
+%  procnamekeys={op,pred,fun},
+%  procnamestyle={\sffamily\itshape},
+  keywordsprefix={'},
+  morekeywords=[1]{unit,bool,int,real,list,matrix,option,distr,fset,array,true,false,res, Some, None},
+  morekeywords=[2]{Pr,type,op,axiom,lemma,module,pred,const,declare},
+  morekeywords=[3]{var,proc,let,in,return},
+  morekeywords=[4]{while,if,then,else,fun},
+  morekeywords=[5]{theory,end,clone,import,export,as,section,of,proving,with},
+  morekeywords=[6]{forall,exists},
+  morekeywords=[7]{idtac,change,beta,iota,zeta,logic,delta,simplify,congr,generalize,
+                   pose,split,left,right,case,intros,cut,elim,apply,rewrite,elimT,subst,
+                   progress,trivial,move},
+  morekeywords=[8]{by,assumption,smt,reflexivity},
+  morekeywords=[9]{first,last,do,try},
+  morekeywords=[10]{int_bool_tuple},
+%  morekeywords=[11]{Rand_t,Distinguisher_t,Evaluator_t,Simulator_t,FRand_t,Adversary_t,MProver_t,MVerifier_t,RandP_t,RandV_t},
+%  morekeywords=[12]{Idle,api_input,api_output,api_operator,API,global_state,AStep},
+%  morekeywords=[13]{group,t,skey,pkey,plaintext,ciphertext,msg,cipher,Scheme,Adv},
+%  moredirectives={prover,print}, % Incomplete
+  morecomment=[n][\itshape\color{gray}]{(*}{*)},
+  morecomment=[n][\bfseries\color{darkgray}]{(**}{*)}
+}
+
+\lstdefinestyle{easycrypt-default}{
+  columns=fullflexible,
+  captionpos=b,
+  frame=tb,
+  breaklines=true,
+  %xleftmargin=.1\textwidth,
+  %xrightmargin=.1\textwidth,
+  rangebeginprefix={(**\ begin\ },
+  rangeendprefix={(**\ end\ },
+  rangesuffix={\ *)},
+  includerangemarker=false,
+  basicstyle=\small\ttfamily,
+  identifierstyle={},
+  keywordstyle=[1]{\itshape\color{OliveGreen}},
+  keywordstyle=[2]{\bfseries\color{Blue}},
+  keywordstyle=[3]{\bfseries\color{Red}},
+  keywordstyle=[4]{\bfseries\color{Red}},
+  keywordstyle=[5]{\bfseries\color{Blue}},
+  keywordstyle=[6]{\itshape\color{Blue}},
+  keywordstyle=[7]{\color{Blue}},
+  keywordstyle=[8]{\color{Red}},
+  keywordstyle=[9]{\color{OliveGreen}},
+  keywordstyle=[10]{\itshape\color{OliveGreen}},
+  keywordstyle=[11]{\itshape\color{OliveGreen}},
+  keywordstyle=[12]{\itshape\color{OliveGreen}},
+  keywordstyle=[13]{\itshape\color{OliveGreen}},
+  keywordstyle=[14]{\itshape\color{OliveGreen}},
+  literate={phi}{{$\!\phi\,$}}1
+           {phi1}{{$\!\phi_1$}}1
+           {phi2}{{$\!\phi_2$}}1
+           {phi3}{{$\!\phi_3$}}1
+           {phin}{{$\!\phi_n$}}1
+}
+
+\lstdefinestyle{easycrypt-pretty}{
+    basicstyle=\small\ttfamily,
+    literate={\\in}{{$\mathrel{\in}\;$}}1
+              {:=}{{$\mathrel{\gets}$}}1
+              {<=}{{$\mathrel{\leq} \; \;$}}1
+              {<=}{{$\mathrel{\leq} \; \;$}}1
+              {>=}{{$\mathrel{\geq}$}}1
+              {<>}{{$\mathrel{\neq} \; \;$}}1
+              {=\$}{{$\stackrel{\$}{\gets}\;$}}1
+              {forall}{{$\forall\;$}}1
+              {exists}{{$\exists\;$}}1
+              {->}{{$\rightarrow\;$}}1
+              {<r}{$\mathrel{< \! \! \$ \;}$}1
+              {<p}{$< \! \! @\;$}1
+              {<-}{{$\leftarrow\;$}}1
+              {<->}{{$\leftrightarrow\;$}}1
+              {<=>}{{$\Leftrightarrow\;$}}1
+              {=>}{{$\Rightarrow\;$}}1
+              {==>}{{$\Rrightarrow\;$}}1
+              {\/\\}{{$\wedge\;$}}1
+              {\\\/}{{$\vee\;$}}1
+              {.\[}{{[}}1
+              {''ora}{{$\mathrel{||}$}}1 %needed for correct display in index
+              {'a}{{\color{OliveGreen}$\alpha\,$}}1
+              {'b}{{\color{OliveGreen}$\beta\,$}}1
+              {'c}{{\color{OliveGreen}$\gamma\,$}}1
+              {'t}{{\color{OliveGreen}$\tau\,$}}1
+              {'x}{{\color{OliveGreen}$\chi\,$}}1
+              {lambda}{{$\lambda\,$}}1
+              {sumvd}{{$\sum_{\textrm{v} \in \textrm{d}}$}}1
+              {o5}{{$\frac{1}{2}$}}1
+              {result}{{$\result$}}1 
+              {m0}{{$\textrm{m}_0$}}1
+              {m1}{{$\textrm{m}_1$}}1
+              {l0}{{$\textrm{l}_0$}}1
+}
+
+\newcommand{\ec}[1]{\lstinline[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]{#1}}

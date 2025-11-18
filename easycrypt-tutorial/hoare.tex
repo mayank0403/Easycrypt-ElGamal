@@ -1,0 +1,545 @@
+To deconstruct imperative programs, \EasyCrypt incorporates a Hoare
+logic proof engine. In \EasyCrypt, a Hoare triple can be written
+according to the following syntax
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+lemma hoare_triple : hoare [p : pre ==> post ]
+\end{lstlisting}
+
+\noindent where \ec{p} is the procedure to be analyzed, \ec{pre} is
+the precondition and \ec{post} is the postcondition.
+
+\subsection{Commonly used Hoare logic tactics}
+\label{sec:hoare-tactics}
+
+\paragraph{\ec{proc}} Turn a goal whose conclusion is a Hoare logic
+judgement involving concrete procedure(s) into one whose conclusion
+is a statement judgement by replacing the concrete procedure(s) by
+their body/ies.
+
+Example: applying \ec{proc} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+pre = true
+
+    Example(M).main
+
+post = true
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+(1--)  z <@ M.gen()             
+(2--)  r <$\$$ [0..100]            
+(3--)  if (x < 100) {           
+(3.1)    y <- x * 2             
+(3--)  } else {                 
+(3?1)    y <- r + z             
+(3--)  }                        
+
+post = true
+\end{lstlisting}
+
+\noindent where \ec{r <}$\$$ \ec{[0..100]} captures the integer random
+sampling in the $[0;100]$ range.
+
+\paragraph{\ec{wp}} Applies the weakest precondition calculus strategy
+to the current program. \ec{wp} will consume assignments, as well as
+\textit{if} conditionals whose body does not encompass any random
+sample or function calls.
+
+Example: applying \ec{wp} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+(1--)  z <@ M.gen()             
+(2--)  r <$\$$ [0..100]            
+(3--)  if (x < 100) {           
+(3.1)    y <- x * 2             
+(3--)  } else {                 
+(3?1)    y <- r + z             
+(3--)  }                        
+
+post = true
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+(1)  z <@ M.gen()             
+(2)  r <$\$$ [0..100]            
+
+post = if x < 100 then true else true
+\end{lstlisting}
+
+\paragraph{\ec{rnd}} If the conclusion is a Hoare logic judgment
+whose program ends with a random assignments \ec{x <}$\$$ \ec{d}, then consume
+those random assignments, replacing the conclusion’s postcondition by
+the probabilistic weakest precondition of the random assignments.
+
+Example: applying \ec{rnd} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+(1)  z <@ M.gen()             
+(2)  r <$\$$ [0..100]            
+
+post = if x < 100 then true else true
+\end{lstlisting}
+
+\noindent is transformed into
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+(1)  z <@ M.gen()             
+
+post =
+  forall (r0 : int),
+    (r0 \in [0..100])%Distr => if x < 100 then true else true
+\end{lstlisting}
+
+\paragraph{\ec{call (_ : )}$\phi$}
+
+If the conclusion is a Hoare logic judgement whose program end
+with a function call of the same abstract procedure,
+then use the specification argument to call generated from the
+invariant $\phi$, and automatically apply \ec{proc} $\phi$ to its first subgoal,
+pruning the first two subgoals the application generates, because
+their conclusions consist of ambient logic formulas that are true by
+construction.
+
+Example: applying \ec{call _ : true} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+(1)  z <@ M.gen()             
+
+post =
+  forall (r0 : int),
+    (r0 \in [0..100])%Distr => if x < 100 then true else true
+\end{lstlisting}
+
+\noindent is transformed to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+
+post =
+  forall (r0 : int),
+    (r0 \in [0..100])%Distr => if x < 100 then true else true
+\end{lstlisting}
+
+\paragraph{\ec{skip}}
+
+If the goal’s conclusion is a statement judgement whose program(s) are
+empty, reduce it to the goal whose conclusion is the ambient logic
+formula $\phi => \psi$, where $\phi$ is the original conclusion’s precondition, and
+$\psi$ is its postcondition.
+
+Example: applying \ec{skip} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+Context : {x, r, y, z : int}
+
+pre = true
+
+
+post =
+  forall (r0 : int),
+    (r0 \in [0..100])%Distr => if x < 100 then true else true
+\end{lstlisting}
+
+\noindent is transformed to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+M : M
+------------------------------------------------------------------------
+forall &hr,
+  true =>
+  forall (r0 : int),
+    (r0 \in [0..100])%Distr => if x{hr} < 100 then true else true
+\end{lstlisting}
+
+\paragraph{\ec{while} $\phi$}
+
+If the goal’s conclusion is a Hoare logic judgement whose program
+ends with a \ec{while} statements, reduce the goal to two subgoals whose
+conclusions are Hoare logic judgments:
+
+\begin{itemize}
+\item One whose program is the body of the \ec{while} statement, whose
+  precondition is the conjunction of $\phi$ and the while statements’
+  boolean expressions and whose postcondition is the conjunction of
+  $\phi$ and the assertion that the while statements’ boolean
+  expressions (interpreted in the appropriate memories) are
+  equivalent. Essentially, one is required to prove that the invariant
+  $\phi$ is preserved throughout the loop execution
+\item One whose precondition is the original goal’s precondition,
+  whose program is the results of removing the while statement from
+  the original program, and whose postcondition is the conjunction of:
+  \begin{itemize}
+  \item the conjunction of $\phi$ and the assertion that the while
+    statement’s boolean expressions are equivalent; and
+  \item the assertion that, for all values of the variables modified
+    by the while statement, if the while statement’s boolean
+    expressions don’t hold, but $\phi$ holds, then the original goal’s
+    postcondition holds.
+  \end{itemize}
+
+  Essentially, one is required to prove that the invariant holds at
+  the beginning of the loop and at the end of the loop.
+\end{itemize}
+
+Example: applying \ec{while (0 <= i <= 10 /\ y = x * i)} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y, i : int}
+
+pre = x = _x
+
+(1--)  i <- 0                   
+(2--)  y <- 0                   
+(3--)  while (i < 10) {         
+(3.1)    y <- y + x             
+(3.2)    i <- i + 1             
+(3--)  }                        
+
+post = y = _x * 10
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y, i : int}
+
+pre = ((0 <= i && i <= 10) /\ y = x * i) /\ i < 10
+
+(1)  y <- y + x               
+(2)  i <- i + 1               
+
+post = (0 <= i && i <= 10) /\ y = x * i
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y, i : int}
+
+pre = x = _x
+
+(1)  i <- 0                   
+(2)  y <- 0                   
+
+post =
+  ((0 <= i && i <= 10) /\ y = x * i) /\
+  forall (i0 y0 : int),
+    ! i0 < 10 => (0 <= i0 && i0 <= 10) /\ y0 = x * i0 => y0 = _x * 10
+\end{lstlisting}
+
+\paragraph{\ec{if}}
+
+If the goal’s conclusion is a Hoare logic judgement whose program begin
+with an if statement, reduces the goal to two subgoals:
+\begin{itemize}
+\item One in which the if statement has been replaced by its
+  \textit{then} branch, and where the assertion of the truth of the
+  if statement’s boolean expression has   been added to the
+  conclusion’s precondition.
+\item One in which the if statement has been replaced by its
+  \textit{else} part, and where the assertion of the falsity of the if
+  statement’s boolean expression has
+  been added to the conclusion’s precondition.
+\end{itemize}
+
+Example: applying \ec{if} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = x = _x /\ x < 100
+
+(1--)  if (x < 100) {           
+(1.1)    y <- x                 
+(1--)  } else {                 
+(1?1)    y <- x * 2             
+(1--)  }                        
+
+post = y = _x
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = (x = _x /\ x < 100) /\ x < 100
+
+(1)  y <- x                   
+
+post = y = _x
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = (x = _x /\ x < 100) /\ ! x < 100
+
+(1)  y <- x * 2               
+
+post = y = _x
+\end{lstlisting}
+
+\paragraph{\ec{rcondt n}}
+
+If the goal’s conclusion is an Hoare logic judgement whose $n$
+statement is an \ec{if} statement, reduce the goal to two subgoals:
+
+\begin{itemize}
+\item One whose concludion is an Hoare logic judgement whose
+  precondition is the original goal’s precondition, whose program is the
+  first $n-1$ statements of the original goal’s program, and
+  whose postcondition is the boolean expression of the if statement.
+\item One whose conclusion is an Hoare logic judgement that’s the
+  same as that of the original goal except that the \ec{if} statement has
+  been replaced by its then part.
+\end{itemize}
+
+Example: applying \ec{rcondt 1} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = x = _x /\ x < 100
+
+(1--)  if (x < 100) {           
+(1.1)    y <- x                 
+(1--)  } else {                 
+(1?1)    y <- x * 2             
+(1--)  }                        
+
+post = y = _x
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = x = _x /\ x < 100
+
+
+post = x < 100
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = x = _x /\ x < 100
+
+(1)  y <- x                   
+
+post = y = _x
+\end{lstlisting}
+
+\paragraph{\ec{rcondf n}}
+
+If the goal’s conclusion is an HL statement judgement whose $n$
+statement is an \ec{if} statement, reduce the goal to two subgoals:
+
+\begin{itemize}
+\item One whose concludion is an Hoare logic judgment whose
+  precondition is the original goal’s precondition, whose program is the
+  first $n-1$ statements of the original goal’s program, and
+  whose postcondition is the negation of the boolean expression of the if
+  statement.
+\item One whose conclusion is an Hoare logic judgement that’s the
+  same as that of the original goal except that the \ec{if} statement has
+  been replaced by its else part. 
+\end{itemize}
+
+Example: applying \ec{rcondf 1} to
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = x = _x /\ x < 100
+
+(1--)  if (x < 100) {           
+(1.1)    y <- x                 
+(1--)  } else {                 
+(1?1)    y <- x * 2             
+(1--)  }                        
+
+post = y = _x
+\end{lstlisting}
+
+\noindent is transformed into the following subgoals
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = x = _x /\ x < 100
+
+
+post = ! x < 100
+\end{lstlisting}
+
+\noindent and
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]  
+_x: int
+------------------------------------------------------------------------
+Context : {x, y : int}
+
+pre = x = _x /\ x < 100
+
+(1)  y <- x * 2               
+
+post = y = _x
+\end{lstlisting}
+
+\subsection{\EasyCrypt Hoare logic example}
+\label{sec:hoare-logic-example}
+
+Consider the following \EasyCrypt module
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+module type M = {
+  proc gen() : int
+}.
+
+module Example (M : M) = {
+  
+  proc main(x : int) : int = {
+    var r, y, z;
+
+    z <@ M.gen();
+    r <$\$$ [0..100];
+    if (x < 100) { y <- x*2; }
+    else { y <- r + z; }
+
+    return y;
+  }
+}.
+\end{lstlisting}
+
+\noindent where we define a module \ec{Example} with a procedure
+\ec{main} that either doubles its input or that assigns it to the
+output of a procedure call added to a random value. In this example,
+we will prove that if the input value \ec{x} is less than 100
+(precondition), then the output will be \ec{x*2} (postcondition).
+
+The \EasyCrypt Hoare triple lemma is written bellow.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+lemma example (M <: M) (_x : int) : hoare [Example(M).main : _x = x /\ x < 100 ==> res = _x * 2].
+\end{lstlisting}
+
+The \ec{example} lemma does two universal quantifications:
+%
+\begin{inparaenum}[i.]
+\item one over every possible modules of type \ec{M} (using the
+  \ec{<:} notation); and
+\item one over every possible integer \ec{_x}
+\end{inparaenum}
+%
+While the former is done to correctly instantiate the \ec{Example}
+module, the latter is done to be able to refer to the value of \ec{x}
+before the program is executed. This allows us to store the value of
+\ec{x} at the beginning of the evaluation and refer to it at the
+postcondition. Note also that the postcondition uses a special value
+dubbed \ec{res}. This is an \EasyCrypt keyword used to refer to the
+output of the program.
+
+The following proof script is able to discharge the afore mentioned
+Hoare triple.
+
+\begin{lstlisting}[mathescape,language=easycrypt,xleftmargin=0pt,xrightmargin=0pt,style=easycrypt-default,basicstyle=\scriptsize\ttfamily,morekeywords={}]
+lemma example (M <: M) (_x : int) : hoare [Example(M).main : _x = x /\ x < 100 ==> res = _x * 2].
+proof.
+  proc.
+  wp.
+  rnd.
+  call (_ : true).
+  skip.
+  move => &hr H result r H0.
+  have : x{hr} < 100 by smt().
+  have : x{hr} = _x by smt().
+  move => H1 H2.
+  rewrite H2.
+  simplify.
+  rewrite H1.
+  reflexivity.
+qed.
+\end{lstlisting}
+
+Again, for a better understanding of the proof process, it is highly
+recommended to reproduce the proof script in \EasyCrypt.
