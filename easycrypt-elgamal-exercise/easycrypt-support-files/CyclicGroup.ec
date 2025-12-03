@@ -1,5 +1,5 @@
 require import Int Xint.
-require PrimeField.
+require import PrimeField.
 
 clone export PrimeField as FD.
 
@@ -16,8 +16,8 @@ op g1 = g ^ F.zero.
 axiom gpow_log (a:group): g ^ (log a) = a.
 axiom log_gpow x : log (g ^ x) = x.
 
-lemma nosmt log_bij x y: x = y <=> log x = log y by smt (gpow_log).
-lemma nosmt pow_bij (x y:F.t): x = y <=> g^x =g^y by smt.
+lemma log_bij x y: x = y <=> log x = log y by smt (gpow_log).
+lemma pow_bij (x y:F.t): x = y <=> g^x =g^y by smt.
 
 axiom inv_def (a:group): inv a = g ^ (-log a).
 axiom div_def (a b:group): g^(log a - log b) = a / b.
@@ -26,17 +26,17 @@ axiom mul_pow g (x y:t): g ^ x * g ^ y = g ^ (x + y).
 
 axiom pow_pow g (x y:t): (g ^ x) ^ y = g ^ (x * y).
 
-lemma nosmt log_pow (g1:group) x: log (g1 ^ x) = log g1 * x by smt.
+lemma log_pow (g1:group) x: log (g1 ^ x) = log g1 * x by smt.
 
-lemma nosmt log_mul (g1 g2:group): log (g1 * g2) = log g1 + log g2 by smt.
+lemma log_mul (g1 g2:group): log (g1 * g2) = log g1 + log g2 by smt.
 
-lemma nosmt pow_mul (g1 g2:group) x: g1^x * g2^x = (g1*g2)^x.
+lemma pow_mul (g1 g2:group) x: g1^x * g2^x = (g1*g2)^x.
 proof.
   rewrite -{1}(gpow_log g1) -{1}(gpow_log g2) !pow_pow mul_pow.
   by rewrite !(F.mulC _ x) mulfDl F.mulC -pow_pow -mul_pow !gpow_log.
 qed.
 
-lemma nosmt pow_opp (x:group) (p:F.t): x^(-p) = inv (x^p).
+lemma pow_opp (x:group) (p:F.t): x^(-p) = inv (x^p).
 proof.
   rewrite inv_def.
   have -> : -p = (-F.one) * p by ringeq.
@@ -44,33 +44,33 @@ proof.
   by rewrite !(F.mulC (-F.one)) -!pow_pow gpow_log.
 qed.
 
-lemma nosmt mulC (x y: group): x * y = y * x.
+lemma mulC (x y: group): x * y = y * x.
 proof.
   by rewrite -(gpow_log x) -(gpow_log y) mul_pow;smt.
 qed.
 
-lemma nosmt mulA (x y z: group): x * (y * z) = x * y * z.
+lemma mulA (x y z: group): x * (y * z) = x * y * z.
 proof.
   by rewrite -(gpow_log x) -(gpow_log y) -(gpow_log z) !mul_pow;smt.
 qed.
 
-lemma nosmt mul1 x: g1 * x = x.
+lemma mul1 x: g1 * x = x.
 proof.
   by rewrite /g1 -(gpow_log x) mul_pow;smt.
 qed.
 
-lemma nosmt divK (a:group): a / a = g1.
-proof strict.
+lemma divK (a:group): a / a = g1.
+proof.
   by rewrite -div_def sub_def addfN.
 qed.
 
-lemma nosmt log_g : log g = F.one.
-proof strict.
+lemma log_g : log g = F.one.
+proof.
  have H: log g - log g = F.one + -log g by smt tmo=10.
  have H1: log g = log g + F.one + -log g; smt.
 qed.
 
-lemma nosmt g_neq0 : g1 <> g.
+lemma g_neq0 : g1 <> g.
 proof.
   rewrite /g1 -{2}(gpow_log g) log_g -pow_bij;smt.
 qed.

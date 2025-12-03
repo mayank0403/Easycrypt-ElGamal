@@ -127,49 +127,49 @@ instance field with t
   proof ofintN    by smt.
 
 (** Lemmas *)
-lemma nosmt subff (x:t): (x - x) = zero
+lemma subff (x:t): (x - x) = zero
 by ringeq.
 
-lemma nosmt add0f (x:t): zero + x = x
+lemma add0f (x:t): zero + x = x
 by ringeq.
 
-lemma nosmt mulf0 (x:t): x * zero = zero
+lemma mulf0 (x:t): x * zero = zero
 by ringeq.
 
-lemma nosmt mulNf (x y:t): (-x) * y = - (x * y)
+lemma mulNf (x y:t): (-x) * y = - (x * y)
 by ringeq.
 
-lemma nosmt mulfN (x y:t): y * (-x)= - (y * x)
+lemma mulfN (x y:t): y * (-x)= - (y * x)
 by ringeq.
 
-lemma nosmt oppK (x:t): -(-x) = x
+lemma oppK (x:t): -(-x) = x
 by ringeq.
 
-lemma nosmt mulfNl (x y z:t): x * y - x * z = x * (y - z)
+lemma mulfNl (x y z:t): x * y - x * z = x * (y - z)
 by ringeq.
 
-lemma nosmt mulN1f (x:t): (-one) * x = -x
+lemma mulN1f (x:t): (-one) * x = -x
 by ringeq.
 
-lemma nosmt oppfD (x y:t): (-x) + (-y) = -(x + y)
+lemma oppfD (x y:t): (-x) + (-y) = -(x + y)
 by ringeq.
 
 import Int.
-lemma nosmt toint_pos (x:t): 0 <= toint x
+lemma toint_pos (x:t): 0 <= toint x
 by smt.
 
-lemma nosmt toint_lt (x:t): toint x < q
+lemma toint_lt (x:t): toint x < q
 by smt.
 
-lemma nosmt toint_le (x:t): toint x <= q - 1
+lemma toint_le (x:t): toint x <= q - 1
 by smt.
 
-lemma nosmt toofint (x:int): 0 <= x => x < q => toint (ofint x) = x.
+lemma toofint (x:int): 0 <= x => x < q => toint (ofint x) = x.
 proof.
   move=> Hp Hlt;rewrite toofint_mod IntDiv.modz_small /#.
 qed.
 
-lemma nosmt ofint1_: ofint 1 = F.one
+lemma ofint1_: ofint 1 = F.one
 by smt.
 
 theory FDistr.
